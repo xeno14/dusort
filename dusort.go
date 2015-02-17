@@ -18,7 +18,7 @@ func SizeToFloat64(sizeStr string) float64 {
   var sub string = sizeStr[:len(sizeStr)-1]
   size, err := strconv.ParseFloat(sub, 64)
   if err != nil {
-    fmt.Println(err)
+    fmt.Fprintln(os.Stderr, "Error at parse float:", err)
   }
   const (
     K = 1000.0
