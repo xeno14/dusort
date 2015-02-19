@@ -56,28 +56,31 @@ func (d Directories) Less(i, j int) bool {
   return SizeToFloat64(d[i].Size) < SizeToFloat64(d[j].Size)
 }
 
-func ReadLines() Directories {
-  directories := make(Directories, 0, 256)
+func ReadStdin() <-chan string {
+  ch := make(chan string)
   scanner := bufio.NewScanner(os.Stdin)
-  for scanner.Scan() {
-    line := scanner.Text()
-    splited := strings.Split(line, "\t")
-    directories = append(directories,
-                         NewDirectory(strings.TrimSpace(splited[1]),
-                                      strings.TrimSpace(splited[0])))
-  }
-  if err := scanner.Err(); err != nil {
-    fmt.Fprintln(os.Stderr, "Error at reading stdin:", err)
-  }
-  return directories
+  go func() {
+    for scanner.Scan() {
+      ch <- scanner.Text()
+    }
+    if err := scanner.Err(); err != nil {
+      fmt.Fprintln(os.Stderr, "Error at reading stdin:", err)
+    }
+    close(ch)
+  }()
+  return ch
 }
 
 func main() {
-  directories := ReadLines()
+  dirs := make(Directories, 0, 1024)
+  for line := range ReadStdin() {
+    splited := strings.Split(line, "\t")
+    dirs = append(dirs, NewDirectory(strings.TrimSpace(splited[1]),
+                                     strings.TrimSpace(splited[0])))
+  }
+  sort.Sort(sort.Reverse(dirs))
 
-  sort.Sort(sort.Reverse(directories))
-
-  for _, d := range directories {
+  for _, d := range dirs {
     fmt.Println(d.Size + "\t" + d.Name)
   }
 }
