@@ -2,6 +2,7 @@ package main
 
 import (
   "bufio"
+  "flag"
   "fmt"
   "os"
   "sort"
@@ -71,7 +72,19 @@ func ReadStdin() <-chan string {
   return ch
 }
 
+func DisplayResult(dirs Directories, threshold string) {
+  last := sort.Search(len(dirs),
+      func(i int) bool { return SizeToFloat64(dirs[i].Size) < SizeToFloat64(threshold) })
+  for i:=0; i<last; i++ {
+    fmt.Println(dirs[i].Size + "\t" + dirs[i].Name)
+  }
+}
+
 func main() {
+  var threshold *string = flag.String("threshold", "0K",
+      "Show results whoose size is larger than this threshold")
+  flag.Parse()
+
   dirs := make(Directories, 0, 1024)
   for line := range ReadStdin() {
     splited := strings.Split(line, "\t")
@@ -79,8 +92,5 @@ func main() {
                                      strings.TrimSpace(splited[0])))
   }
   sort.Sort(sort.Reverse(dirs))
-
-  for _, d := range dirs {
-    fmt.Println(d.Size + "\t" + d.Name)
-  }
+  DisplayResult(dirs, *threshold)
 }
